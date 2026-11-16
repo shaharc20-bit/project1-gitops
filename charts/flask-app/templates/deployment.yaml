@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.awsRegion | quote }}
+          {{- if or .Values.aws.existingSecret .Values.aws.accessKeyId }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.aws.existingSecret | default (printf "%s-aws" .Release.Name) }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
